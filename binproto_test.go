@@ -1,13 +1,14 @@
-package go_binproto
+package binproto
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"runtime"
 	"testing"
 )
 
-func TestProtoPositive(t *testing.T) {
+func TestEncodeDecodePositive(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
 	proto := NewBinProto(len(src))
@@ -22,6 +23,67 @@ func TestProtoPositive(t *testing.T) {
 	//THEN
 	if !bytes.Equal(decodedSave, src) {
 		t.Errorf("Decoded array %v does not equal to the source %v", decodedSave, src)
+	}
+}
+
+func TestEncodeEmptyWithInput(t *testing.T) {
+	//GIVEN
+	emptySrc := []byte{}
+	expectedEncoded := []byte{1, 1, 1}
+	proto := NewBinProto(20)
+	//WHEN
+	encoded, err := proto.Encode(emptySrc)
+	//THEN
+	if err != nil {
+		t.Error("decoding empty data failed: ", err)
+	}
+	if !bytes.Equal(encoded, expectedEncoded) {
+		t.Errorf("encoded data is different than expected. Expected: %v, get: %v", expectedEncoded, encoded)
+	}
+}
+
+func TestDecodeWithEmptyInput(t *testing.T) {
+	//GIVEN
+	emptyEncoded := []byte{}
+	proto := NewBinProto(20)
+	//WHEN
+	_, err := proto.Decode(emptyEncoded)
+	//THEN
+	if err == nil {
+		t.Error("empty message decoding succeed. This should fail")
+	}
+	if err.Error() != fmt.Errorf("decoded message is too short. Decoded length: %v", len(emptyEncoded)).Error() {
+		t.Error("wrong error message received:", err)
+	}
+}
+
+func TestDecodeWithTooShortInput(t *testing.T) {
+	//GIVEN
+	tooShortEncoded := []byte{1, 1}
+	proto := NewBinProto(20)
+
+	//WHEN/THEN
+	_, err := proto.Decode(tooShortEncoded)
+	if err == nil {
+		t.Error("too short message decoding succeed. This should faild")
+	}
+	if err.Error() != fmt.Errorf("decoded message is too short. Decoded length: %v", 1).Error() {
+		t.Error("wrong error message received:", err)
+	}
+}
+
+func TestDecodeWithMalformedLengthByte(t *testing.T) {
+	//GIVEN
+	encoded := []byte{3, 1}
+	proto := NewBinProto(20)
+	//WHEN
+	_, err := proto.Decode(encoded)
+	//THEN
+	if err == nil {
+		t.Error("malformed message decoding succeed. This should fail")
+	}
+	if err.Error() != fmt.Errorf("encoded message is too short. Required: %v, get: %v", 3, 2).Error() {
+		t.Error("wrong error message received:", err)
 	}
 }
 

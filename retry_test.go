@@ -1,4 +1,4 @@
-package go_binproto
+package binproto
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package go_binproto
+package binproto
 
 import (
 	"fmt"
@@ -11,11 +11,9 @@ func Retry(attempts int, sleep time.Duration, callback func() error) (err error)
 		if err == nil {
 			return
 		}
-
 		if i >= (attempts - 1) {
 			break
 		}
-
 		time.Sleep(sleep)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)

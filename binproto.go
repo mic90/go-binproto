@@ -1,8 +1,9 @@
-package go_binproto
+package binproto
 
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -50,15 +51,16 @@ func (proto *BinProto) Decode(src []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if decodedLen < 2 {
+		return nil, fmt.Errorf("decoded message is too short. Decoded length: %v", decodedLen)
+	}
 	msgWithoutCrc := proto.buffer[:decodedLen-2]
 	msgCrc := proto.buffer[decodedLen-2 : decodedLen]
 	calculatedCrc := Fletcher16(msgWithoutCrc)
 	if !bytes.Equal(msgCrc, calculatedCrc) {
 		return nil, errors.New("calculated crc doesn't match received one")
 	}
-	newBuff := make([]byte, len(msgWithoutCrc))
-	copy(newBuff, msgWithoutCrc)
-	return newBuff, nil
+	return msgWithoutCrc, nil
 }
 
 func NewBinProtoMessage(data ...byte) []byte {

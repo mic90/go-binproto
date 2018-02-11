@@ -1,7 +1,7 @@
-package go_binproto
+package binproto
 
 import (
-	"errors"
+	"fmt"
 )
 
 func CobsEncode(src []byte, dest *[]byte) (int, error) {
@@ -12,7 +12,7 @@ func CobsEncode(src []byte, dest *[]byte) (int, error) {
 
 	requiredLen := CobsGetEncodedBufferSize(srcLen)
 	if len(*dest) < requiredLen {
-		return 0, errors.New("destination array capacity is too small")
+		return 0, fmt.Errorf("destination array length is too small. Required: %v, get: %v", requiredLen, len(*dest))
 	}
 
 	codePtr := 0
@@ -46,17 +46,25 @@ func CobsEncode(src []byte, dest *[]byte) (int, error) {
 
 func CobsDecode(enc []byte, dest *[]byte) (int, error) {
 	encLen := len(enc)
+	destLen := len(*dest)
 	ptr := 0
 	pos := 0
+
+	if encLen == 0 {
+		return 0, nil
+	}
 
 	for ptr < encLen {
 		code := enc[ptr]
 
 		if ptr+int(code) > encLen {
-			return 0, errors.New("unable to decode, message is too short")
+			return 0, fmt.Errorf("encoded message is too short. Required: %v, get: %v", ptr+int(code), encLen)
 		}
-
 		ptr++
+
+		if pos+int(code) > destLen {
+			return 0, fmt.Errorf("destination array length is too short. Required: %v, get: %v", pos+int(code), destLen)
+		}
 
 		for i := 1; i < int(code); i++ {
 			(*dest)[pos] = enc[ptr]
@@ -67,10 +75,6 @@ func CobsDecode(enc []byte, dest *[]byte) (int, error) {
 			(*dest)[pos] = 0
 			pos++
 		}
-	}
-
-	if len(*dest) == 0 {
-		return 0, nil
 	}
 
 	return pos - 1, nil // trim phantom zero
