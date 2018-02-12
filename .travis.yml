@@ -2,6 +2,6 @@ language: go
 go:
   - 1.9.x
   - master
-script: go test -v
+script: go test -v -race -coverprofile=coverage.txt -covermode=atomic
 notifications:
   email: false
