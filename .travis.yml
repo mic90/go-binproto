@@ -2,6 +2,6 @@ language: go
 go:
   - 1.9.x
   - master
-script: go get github.com/bmizerany/assert && go get github.com/mrb/hob && go test
+script: go test -v
 notifications:
   email: false
