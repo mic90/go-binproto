@@ -4,15 +4,15 @@ import (
 	"fmt"
 )
 
-func CobsEncode(src []byte, dest *[]byte) (int, error) {
+func CobsEncode(src []byte, dest []byte) (int, error) {
 	srcLen := len(src)
 	if srcLen == 0 {
 		return 0, nil
 	}
 
 	requiredLen := CobsGetEncodedBufferSize(srcLen)
-	if len(*dest) < requiredLen {
-		return 0, fmt.Errorf("destination array length is too small. Required: %v, get: %v", requiredLen, len(*dest))
+	if len(dest) < requiredLen {
+		return 0, fmt.Errorf("destination array length is too small. Required: %v, get: %v", requiredLen, len(dest))
 	}
 
 	codePtr := 0
@@ -21,32 +21,32 @@ func CobsEncode(src []byte, dest *[]byte) (int, error) {
 
 	for _, srcValue := range src {
 		if srcValue == 0 {
-			(*dest)[codePtr] = code
+			dest[codePtr] = code
 			codePtr = pos
-			(*dest)[pos] = 0
+			dest[pos] = 0
 			pos++
 			code = byte(0x01)
 			continue
 		}
 
-		(*dest)[pos] = srcValue
+		dest[pos] = srcValue
 		pos++
 		code++
 		if code == 0xFF {
-			(*dest)[codePtr] = code
+			dest[codePtr] = code
 			codePtr = pos
-			(*dest)[pos] = 0
+			dest[pos] = 0
 			pos++
 			code = byte(0x01)
 		}
 	}
-	(*dest)[codePtr] = code
+	dest[codePtr] = code
 	return pos, nil
 }
 
-func CobsDecode(enc []byte, dest *[]byte) (int, error) {
+func CobsDecode(enc []byte, dest []byte) (int, error) {
 	encLen := len(enc)
-	destLen := len(*dest)
+	destLen := len(dest)
 	ptr := 0
 	pos := 0
 
@@ -67,12 +67,12 @@ func CobsDecode(enc []byte, dest *[]byte) (int, error) {
 		}
 
 		for i := 1; i < int(code); i++ {
-			(*dest)[pos] = enc[ptr]
+			dest[pos] = enc[ptr]
 			pos++
 			ptr++
 		}
 		if code < 0xFF {
-			(*dest)[pos] = 0
+			dest[pos] = 0
 			pos++
 		}
 	}

@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
-	"runtime"
 	"testing"
 )
 
 func TestEncodeDecodePositive(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto(len(src))
+	proto := NewBinProto()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -28,9 +27,9 @@ func TestEncodeDecodePositive(t *testing.T) {
 
 func TestEncodeEmptyWithInput(t *testing.T) {
 	//GIVEN
-	emptySrc := []byte{}
+	var emptySrc []byte
 	expectedEncoded := []byte{1, 1, 1}
-	proto := NewBinProto(20)
+	proto := NewBinProto()
 	//WHEN
 	encoded, err := proto.Encode(emptySrc)
 	//THEN
@@ -44,8 +43,8 @@ func TestEncodeEmptyWithInput(t *testing.T) {
 
 func TestDecodeWithEmptyInput(t *testing.T) {
 	//GIVEN
-	emptyEncoded := []byte{}
-	proto := NewBinProto(20)
+	var emptyEncoded []byte
+	proto := NewBinProto()
 	//WHEN
 	_, err := proto.Decode(emptyEncoded)
 	//THEN
@@ -60,7 +59,7 @@ func TestDecodeWithEmptyInput(t *testing.T) {
 func TestDecodeWithTooShortInput(t *testing.T) {
 	//GIVEN
 	tooShortEncoded := []byte{1, 1}
-	proto := NewBinProto(20)
+	proto := NewBinProto()
 
 	//WHEN/THEN
 	_, err := proto.Decode(tooShortEncoded)
@@ -75,7 +74,7 @@ func TestDecodeWithTooShortInput(t *testing.T) {
 func TestDecodeWithMalformedLengthByte(t *testing.T) {
 	//GIVEN
 	encoded := []byte{3, 1}
-	proto := NewBinProto(20)
+	proto := NewBinProto()
 	//WHEN
 	_, err := proto.Decode(encoded)
 	//THEN
@@ -92,7 +91,7 @@ func TestProtoPositiveWithBigData(t *testing.T) {
 	dataSize := 10000
 	src := make([]byte, dataSize)
 	rand.Read(src)
-	proto := NewBinProto(len(src))
+	proto := NewBinProto()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -110,7 +109,7 @@ func TestProtoPositiveWithBigData(t *testing.T) {
 func TestProtoCrcMismatch(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto(len(src))
+	proto := NewBinProto()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -123,27 +122,32 @@ func TestProtoCrcMismatch(t *testing.T) {
 	}
 }
 
-func TestProtoMemoryUsage(t *testing.T) {
-	//GIVEN
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	// 2000 is roughly the memory usage increase beacuse of runtime.ReadMemStats
-	maxMemoryUsage := uint64(2000)
-	iterationsCount := 10000
+func BenchmarkBinProto_Encode(b *testing.B) {
 	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
-	proto := NewBinProto(len(src))
-	//WHEN
-	for i := 0; i < iterationsCount; i++ {
+	proto := NewBinProto()
+
+	b.ResetTimer()
+
+	for i := 0; i<b.N; i++ {
 		_, err := proto.Encode(src)
 		if err != nil {
-			t.Errorf("Failed to encode source array %v. Error: %v", src, err)
+			b.Errorf("Failed to encode source array %v. Error: %v", src, err)
 		}
 	}
-	//THEN
-	allocBefore := m.Alloc
-	runtime.ReadMemStats(&m)
-	allocDiff := m.Alloc - allocBefore
-	if allocDiff > maxMemoryUsage {
-		t.Errorf("Memory usage after %d iterations is higher than expected. Got: %d, expected below: %d", iterationsCount, allocDiff, maxMemoryUsage)
+}
+
+func BenchmarkBinProto_Decode(b *testing.B) {
+	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
+	proto := NewBinProto()
+	proto.Encode(src)
+	encoded := proto.Copy()
+
+	b.ResetTimer()
+
+	for i := 0; i<b.N; i++ {
+		_, err := proto.Decode(encoded)
+		if err != nil {
+			b.Errorf("Failed to decode source array %v. Error: %v", src, err)
+		}
 	}
 }

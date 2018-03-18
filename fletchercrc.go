@@ -2,6 +2,10 @@ package binproto
 
 var buff = make([]byte, 2)
 
+const (
+	CrcLen = 2
+)
+
 func Fletcher16(src []byte) []byte {
 	sumA, sumB := uint16(0), uint16(0)
 

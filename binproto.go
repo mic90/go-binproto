@@ -2,71 +2,81 @@ package binproto
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"sync"
 )
 
 type BinProto struct {
-	buffer []byte
-	mutex  sync.Mutex
+	buffer  bytes.Buffer
+	lastPos int
 }
 
-func NewBinProto(maxMsgLen int) (binProto *BinProto) {
-	requiredLen := maxMsgLen + 2
-	requiredEncodedLen := CobsGetEncodedBufferSize(requiredLen)
-	buffer := make([]byte, requiredEncodedLen)
-
-	return &BinProto{buffer, sync.Mutex{}}
-}
-
-func (proto *BinProto) clear() {
-	for index := range proto.buffer {
-		proto.buffer[index] = 0
-	}
+func NewBinProto() (binProto *BinProto) {
+	var buffer bytes.Buffer
+	return &BinProto{buffer, 0}
 }
 
 func (proto *BinProto) Encode(src []byte) ([]byte, error) {
-	proto.mutex.Lock()
-	defer proto.mutex.Unlock()
-
+	requiredBufferLen := CobsGetEncodedBufferSize(len(src) + CrcLen)
 	proto.clear()
+	proto.checkSizeAndGrow(requiredBufferLen)
 
 	src = append(src, Fletcher16(src)...)
 
-	encodedLen, err := CobsEncode(src, &proto.buffer)
+	encodedLen, err := CobsEncode(src, proto.buffer.Bytes())
 	if err != nil {
 		return nil, err
 	}
-	return proto.buffer[:encodedLen], nil
+	proto.lastPos = encodedLen
+	return proto.buffer.Bytes()[:encodedLen], nil
 }
 
 func (proto *BinProto) Decode(src []byte) ([]byte, error) {
-	proto.mutex.Lock()
-	defer proto.mutex.Unlock()
-
 	proto.clear()
+	proto.checkSizeAndGrow(len(src))
 
-	decodedLen, err := CobsDecode(src, &proto.buffer)
+	decodedLen, err := CobsDecode(src, proto.buffer.Bytes())
 	if err != nil {
 		return nil, err
 	}
 	if decodedLen < 2 {
 		return nil, fmt.Errorf("decoded message is too short. Decoded length: %v", decodedLen)
 	}
-	msgWithoutCrc := proto.buffer[:decodedLen-2]
-	msgCrc := proto.buffer[decodedLen-2 : decodedLen]
+	msgWithoutCrc := proto.buffer.Next(decodedLen - CrcLen)
+	msgCrc := proto.buffer.Next(CrcLen)
 	calculatedCrc := Fletcher16(msgWithoutCrc)
 	if !bytes.Equal(msgCrc, calculatedCrc) {
-		return nil, errors.New("calculated crc doesn't match received one")
+		return nil, fmt.Errorf("calculated crc %v doesn't match received one %v", calculatedCrc, msgCrc)
 	}
+	proto.lastPos = decodedLen
 	return msgWithoutCrc, nil
 }
 
+// Copy will make a copy of the last encode/decode operation
+// ! This function will allocate a new buffer for each call, so use it wisely
+func (proto BinProto) Copy() []byte {
+	newArray := make([]byte, proto.lastPos)
+	copy(newArray, proto.buffer.Bytes()[:proto.lastPos])
+	return newArray
+}
+
+// NewBinProtoMessage will allocate new slice for given message, to contain crc checksum
+// Allocated slice cap will be of len(source) + CrcLen, and len of len(source)
 func NewBinProtoMessage(data ...byte) []byte {
 	//reserve space for crc checksum
-	requiredLen := len(data) + 2
+	requiredLen := len(data) + CrcLen
 	msgSlice := make([]byte, len(data), requiredLen)
 	copy(msgSlice, data)
 	return msgSlice
+}
+
+func (proto *BinProto) clear() {
+	proto.buffer.Reset()
+}
+
+func (proto *BinProto) checkSizeAndGrow(requiredLen int) {
+	if proto.buffer.Len() < requiredLen {
+		for i := 0; i<requiredLen; i++ {
+			proto.buffer.WriteByte(0)
+		}
+	}
 }
