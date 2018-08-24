@@ -1,4 +1,9 @@
-# go-binproto [![Build Status](https://travis-ci.org/mic90/go-binproto.svg?branch=master)](https://travis-ci.org/mic90/go-binproto)
+# go-binproto 
+
+[![Build Status](https://travis-ci.org/mic90/go-binproto.svg?branch=master)](https://travis-ci.org/mic90/go-binproto)
+[![go report card](https://goreportcard.com/badge/github.com/mic90/go-binproto)]
+[![coverage](http://gocover.io/_badge/github.com/mic90/go-binproto)](https://gocover.io/github.com/mic90/go-binproto)
+[![godocs](https://godoc.org/github.com/mic90/go-binproto?status.svg)](https://godoc.org/github.com/mic90/go-binproto) 
 
 This package provides simple binary protocol implementation in Golang. 
 
