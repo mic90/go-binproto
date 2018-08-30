@@ -123,10 +123,9 @@ func TestProtoCrcMismatch(t *testing.T) {
 }
 
 func BenchmarkBinProto_Encode(b *testing.B) {
-	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
+	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
 	proto := NewBinProto()
-
-	b.ResetTimer()
+	proto.Encode(src)
 
 	for i := 0; i<b.N; i++ {
 		_, err := proto.Encode(src)
@@ -137,12 +136,10 @@ func BenchmarkBinProto_Encode(b *testing.B) {
 }
 
 func BenchmarkBinProto_Decode(b *testing.B) {
-	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
+	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
 	proto := NewBinProto()
 	proto.Encode(src)
 	encoded := proto.Copy()
-
-	b.ResetTimer()
 
 	for i := 0; i<b.N; i++ {
 		_, err := proto.Decode(encoded)

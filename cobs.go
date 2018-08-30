@@ -4,13 +4,13 @@ import (
 	"fmt"
 )
 
-func CobsEncode(src []byte, dest []byte) (int, error) {
+func cobsEncode(src []byte, dest []byte) (int, error) {
 	srcLen := len(src)
 	if srcLen == 0 {
 		return 0, nil
 	}
 
-	requiredLen := CobsGetEncodedBufferSize(srcLen)
+	requiredLen := cobsGetEncodedBufferSize(srcLen)
 	if len(dest) < requiredLen {
 		return 0, fmt.Errorf("destination array length is too small. Required: %v, get: %v", requiredLen, len(dest))
 	}
@@ -44,7 +44,7 @@ func CobsEncode(src []byte, dest []byte) (int, error) {
 	return pos, nil
 }
 
-func CobsDecode(enc []byte, dest []byte) (int, error) {
+func cobsDecode(enc []byte, dest []byte) (int, error) {
 	encLen := len(enc)
 	destLen := len(dest)
 	ptr := 0
@@ -80,6 +80,6 @@ func CobsDecode(enc []byte, dest []byte) (int, error) {
 	return pos - 1, nil // trim phantom zero
 }
 
-func CobsGetEncodedBufferSize(rawSize int) int {
+func cobsGetEncodedBufferSize(rawSize int) int {
 	return rawSize + rawSize/254 + 1
 }
