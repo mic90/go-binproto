@@ -17,7 +17,6 @@ type Decoder interface {
 	Decode([]byte) ([]byte, error)
 }
 
-
 // EncodeDecoder can perform both encoding and decoding operations
 type EncodeDecoder interface {
 	Encoder
@@ -27,10 +26,10 @@ type EncodeDecoder interface {
 // BinProto implements COBS encoder/decoder with crc checksum
 type BinProto struct {
 	// buffer will contain result of encode/decode
-	buffer  bytes.Buffer
+	buffer bytes.Buffer
 	// crcBuffer is temporary buffer which holds concatenated src slice and checksum
 	crcBuffer bytes.Buffer
-	lastPos int
+	lastPos   int
 }
 
 // NewBinProto returns new BinProto object
@@ -110,7 +109,7 @@ func (proto *BinProto) clear() {
 
 func (proto *BinProto) checkSizeAndGrow(requiredLen int) {
 	if proto.buffer.Len() < requiredLen {
-		for i := 0; i<requiredLen; i++ {
+		for i := 0; i < requiredLen; i++ {
 			proto.buffer.WriteByte(0)
 		}
 	}

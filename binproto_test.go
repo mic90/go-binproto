@@ -127,7 +127,7 @@ func BenchmarkBinProto_Encode(b *testing.B) {
 	proto := NewBinProto()
 	proto.Encode(src)
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := proto.Encode(src)
 		if err != nil {
 			b.Errorf("Failed to encode source array %v. Error: %v", src, err)
@@ -141,7 +141,7 @@ func BenchmarkBinProto_Decode(b *testing.B) {
 	proto.Encode(src)
 	encoded := proto.Copy()
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := proto.Decode(encoded)
 		if err != nil {
 			b.Errorf("Failed to decode source array %v. Error: %v", src, err)

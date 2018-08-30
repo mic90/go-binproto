@@ -81,7 +81,7 @@ func BenchmarkCobsEncode(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := cobsEncode(src, encodeBuffer)
 		if err != nil {
 			b.Errorf("Failed to decode source array %v. Error: %v", src, err)
@@ -95,7 +95,7 @@ func BenchmarkCobsDecode(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := cobsDecode(src, encodeBuffer)
 		if err != nil {
 			b.Errorf("Failed to decode source array %v. Error: %v", src, err)

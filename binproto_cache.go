@@ -10,6 +10,7 @@ type Cache struct {
 	cache    map[string][]byte
 }
 
+// NewCache returns new cached protocol object
 func NewCache() *Cache {
 	cache := make(map[string][]byte)
 	return &Cache{protocol: NewBinProto(), cache: cache}

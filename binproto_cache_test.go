@@ -1,8 +1,8 @@
 package binproto
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestCacheEncodeDecodePositive(t *testing.T) {
@@ -28,7 +28,7 @@ func BenchmarkCache_Encode(b *testing.B) {
 	cache := NewCache()
 	cache.Encode(src)
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := cache.Encode(src)
 		if err != nil {
 			b.Errorf("Failed to encode source array %v. Error: %v", src, err)
@@ -42,7 +42,7 @@ func BenchmarkCache_Decode(b *testing.B) {
 	cache.Encode(src)
 	encoded := cache.Copy()
 
-	for i := 0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		_, err := cache.Decode(encoded)
 		if err != nil {
 			b.Errorf("Failed to decode source array %v. Error: %v", src, err)
