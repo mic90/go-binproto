@@ -25,18 +25,14 @@ type EncodeDecoder interface {
 
 // ProtocolParser implements COBS encoder/decoder with crc checksum
 type ProtocolParser struct {
-	// buffer will contain result of encode/decode
-	buffer bytes.Buffer
-	// crcBuffer is temporary buffer which holds concatenated src slice and checksum
-	crcBuffer bytes.Buffer
-	arr       []byte
-	crcArr    []byte
+	buffer    []byte
+	crcBuffer []byte
 	lastPos   int
 }
 
 // NewProtocolParser returns new BinProto object
 func NewProtocolParser() (binProto *ProtocolParser) {
-	return &ProtocolParser{bytes.Buffer{}, bytes.Buffer{}, []byte{}, []byte{}, 0}
+	return &ProtocolParser{[]byte{}, []byte{}, 0}
 }
 
 // Encode encodes given source slice with COBS encoding
@@ -46,19 +42,19 @@ func NewProtocolParser() (binProto *ProtocolParser) {
 func (proto *ProtocolParser) Encode(src []byte) ([]byte, error) {
 	srcWithChecksumLen := len(src) + crcLen
 	requiredBufferLen := cobsGetEncodedBufferSize(srcWithChecksumLen)
-	if len(proto.arr) < requiredBufferLen {
-		proto.arr = make([]byte, requiredBufferLen)
+	if len(proto.buffer) < requiredBufferLen {
+		proto.buffer = make([]byte, requiredBufferLen)
 	}
-	proto.crcArr = proto.crcArr[:0]
-	proto.crcArr = append(proto.crcArr, src...)
-	proto.crcArr = append(proto.crcArr, fletcher16(src)...)
+	proto.crcBuffer = proto.crcBuffer[:0]
+	proto.crcBuffer = append(proto.crcBuffer, src...)
+	proto.crcBuffer = append(proto.crcBuffer, fletcher16(src)...)
 
-	encodedLen, err := cobsEncode(proto.crcArr[:srcWithChecksumLen], proto.arr)
+	encodedLen, err := cobsEncode(proto.crcBuffer[:srcWithChecksumLen], proto.buffer)
 	if err != nil {
 		return nil, err
 	}
 	proto.lastPos = encodedLen
-	return proto.arr[:encodedLen], nil
+	return proto.buffer[:encodedLen], nil
 }
 
 // Decode decodes given source slice to the raw data
@@ -67,10 +63,10 @@ func (proto *ProtocolParser) Encode(src []byte) ([]byte, error) {
 // If checksum read after decoding is not correct, error will be returned
 func (proto *ProtocolParser) Decode(src []byte) ([]byte, error) {
 	sourceLength := len(src)
-	if len(proto.arr) < sourceLength {
-		proto.arr = make([]byte, sourceLength)
+	if len(proto.buffer) < sourceLength {
+		proto.buffer = make([]byte, sourceLength)
 	}
-	decodedLength, err := cobsDecode(src, proto.arr)
+	decodedLength, err := cobsDecode(src, proto.buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +74,8 @@ func (proto *ProtocolParser) Decode(src []byte) ([]byte, error) {
 		return nil, fmt.Errorf("decoded message is too short. Decoded length: %v", decodedLength)
 	}
 	msgWithoutCrcLen := decodedLength - crcLen
-	msgWithoutCrc := proto.arr[:msgWithoutCrcLen]
-	msgCrc := proto.arr[msgWithoutCrcLen:decodedLength]
+	msgWithoutCrc := proto.buffer[:msgWithoutCrcLen]
+	msgCrc := proto.buffer[msgWithoutCrcLen:decodedLength]
 	calculatedCrc := fletcher16(msgWithoutCrc)
 	if !bytes.Equal(msgCrc, calculatedCrc) {
 		return nil, fmt.Errorf("calculated crc %v doesn't match received one %v", calculatedCrc, msgCrc)
@@ -92,6 +88,6 @@ func (proto *ProtocolParser) Decode(src []byte) ([]byte, error) {
 // ! This function will allocate a new buffer for each call, so use it wisely
 func (proto *ProtocolParser) Copy() []byte {
 	newArray := make([]byte, proto.lastPos)
-	copy(newArray, proto.arr[:proto.lastPos])
+	copy(newArray, proto.buffer[:proto.lastPos])
 	return newArray
 }
