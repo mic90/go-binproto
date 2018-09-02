@@ -24,7 +24,7 @@ func TestCacheEncodeDecodePositive(t *testing.T) {
 }
 
 func BenchmarkCache_Encode(b *testing.B) {
-	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
+	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
 	cache := NewCache()
 	cache.Encode(src)
 
@@ -37,7 +37,7 @@ func BenchmarkCache_Encode(b *testing.B) {
 }
 
 func BenchmarkCache_Decode(b *testing.B) {
-	src := NewBinProtoMessage(1, 1, 1, 0, 0, 1, 5, 12, 44)
+	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
 	cache := NewCache()
 	cache.Encode(src)
 	encoded := cache.Copy()

@@ -29,12 +29,14 @@ type BinProto struct {
 	buffer bytes.Buffer
 	// crcBuffer is temporary buffer which holds concatenated src slice and checksum
 	crcBuffer bytes.Buffer
+	arr       []byte
+	crcArr    []byte
 	lastPos   int
 }
 
 // NewBinProto returns new BinProto object
 func NewBinProto() (binProto *BinProto) {
-	return &BinProto{bytes.Buffer{}, bytes.Buffer{}, 0}
+	return &BinProto{bytes.Buffer{}, bytes.Buffer{}, []byte{}, []byte{}, 0}
 }
 
 // Encode encodes given source slice with COBS encoding
@@ -44,18 +46,19 @@ func NewBinProto() (binProto *BinProto) {
 func (proto *BinProto) Encode(src []byte) ([]byte, error) {
 	srcWithChecksumLen := len(src) + crcLen
 	requiredBufferLen := cobsGetEncodedBufferSize(srcWithChecksumLen)
-	proto.clear()
-	proto.checkSizeAndGrow(requiredBufferLen)
+	if len(proto.arr) < requiredBufferLen {
+		proto.arr = make([]byte, requiredBufferLen)
+	}
+	proto.crcArr = proto.crcArr[:0]
+	proto.crcArr = append(proto.crcArr, src...)
+	proto.crcArr = append(proto.crcArr, fletcher16(src)...)
 
-	proto.crcBuffer.Write(src)
-	proto.crcBuffer.Write(fletcher16(src))
-
-	encodedLen, err := cobsEncode(proto.crcBuffer.Bytes(), proto.buffer.Bytes())
+	encodedLen, err := cobsEncode(proto.crcArr[:srcWithChecksumLen], proto.arr)
 	if err != nil {
 		return nil, err
 	}
 	proto.lastPos = encodedLen
-	return proto.buffer.Bytes()[:encodedLen], nil
+	return proto.arr[:encodedLen], nil
 }
 
 // Decode decodes given source slice to the raw data
@@ -63,23 +66,25 @@ func (proto *BinProto) Encode(src []byte) ([]byte, error) {
 // It is also assumed that after encoding removal, raw data consist of data + crc check sum
 // If checksum read after decoding is not correct, error will be returned
 func (proto *BinProto) Decode(src []byte) ([]byte, error) {
-	proto.clear()
-	proto.checkSizeAndGrow(len(src))
-
-	decodedLen, err := cobsDecode(src, proto.buffer.Bytes())
+	sourceLength := len(src)
+	if len(proto.arr) < sourceLength {
+		proto.arr = make([]byte, sourceLength)
+	}
+	decodedLength, err := cobsDecode(src, proto.arr)
 	if err != nil {
 		return nil, err
 	}
-	if decodedLen < 2 {
-		return nil, fmt.Errorf("decoded message is too short. Decoded length: %v", decodedLen)
+	if decodedLength < 2 {
+		return nil, fmt.Errorf("decoded message is too short. Decoded length: %v", decodedLength)
 	}
-	msgWithoutCrc := proto.buffer.Next(decodedLen - crcLen)
-	msgCrc := proto.buffer.Next(crcLen)
+	msgWithoutCrcLen := decodedLength - crcLen
+	msgWithoutCrc := proto.arr[:msgWithoutCrcLen]
+	msgCrc := proto.arr[msgWithoutCrcLen:decodedLength]
 	calculatedCrc := fletcher16(msgWithoutCrc)
 	if !bytes.Equal(msgCrc, calculatedCrc) {
 		return nil, fmt.Errorf("calculated crc %v doesn't match received one %v", calculatedCrc, msgCrc)
 	}
-	proto.lastPos = decodedLen
+	proto.lastPos = decodedLength
 	return msgWithoutCrc, nil
 }
 
@@ -87,30 +92,7 @@ func (proto *BinProto) Decode(src []byte) ([]byte, error) {
 // ! This function will allocate a new buffer for each call, so use it wisely
 func (proto BinProto) Copy() []byte {
 	newArray := make([]byte, proto.lastPos)
-	copy(newArray, proto.buffer.Bytes()[:proto.lastPos])
+	copy(newArray, proto.arr[:proto.lastPos])
 	return newArray
 }
 
-// NewBinProtoMessage will allocate new slice for given message, to contain crc checksum
-// Allocated slice cap will be of len(source) + crcLen, and len of len(source)
-func NewBinProtoMessage(data ...byte) []byte {
-	//reserve space for crc checksum
-	requiredLen := len(data) + crcLen
-	msgSlice := make([]byte, len(data), requiredLen)
-	copy(msgSlice, data)
-	return msgSlice
-}
-
-func (proto *BinProto) clear() {
-	proto.crcBuffer.Reset()
-	proto.buffer.Reset()
-	proto.lastPos = 0
-}
-
-func (proto *BinProto) checkSizeAndGrow(requiredLen int) {
-	if proto.buffer.Len() < requiredLen {
-		for i := 0; i < requiredLen; i++ {
-			proto.buffer.WriteByte(0)
-		}
-	}
-}

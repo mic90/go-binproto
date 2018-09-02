@@ -127,6 +127,8 @@ func BenchmarkBinProto_Encode(b *testing.B) {
 	proto := NewBinProto()
 	proto.Encode(src)
 
+	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		_, err := proto.Encode(src)
 		if err != nil {

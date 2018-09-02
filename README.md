@@ -22,12 +22,14 @@ Internal memory buffer will grow only if its required to store a message bigger 
 To obtain a copy of the last result use the **Copy** method. !This method will allocate new memory for the result data on each call!.
 
 ```bash
-BenchmarkCache_Encode-4         100000000               14.9 ns/op             0 B/op          0 allocs/op
-BenchmarkCache_Decode-4         100000000               16.5 ns/op             0 B/op          0 allocs/op
-BenchmarkBinProto_Encode-4      10000000               143 ns/op               0 B/op          0 allocs/op
-BenchmarkBinProto_Decode-4      10000000               134 ns/op               0 B/op          0 allocs/op
-BenchmarkCobsEncode-4           100000000               21.0 ns/op             0 B/op          0 allocs/op
-BenchmarkCobsDecode-4           100000000               17.8 ns/op             0 B/op          0 allocs/op
+BenchmarkCache_Encode-4             	100000000	        14.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCache_Decode-4             	100000000	        15.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBinProto_Encode-4          	20000000	        73.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBinProto_Decode-4          	20000000	        69.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCobsEncode-4               	100000000	        21.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCobsDecode-4               	100000000	        17.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFletcher16-4               	100000000	        21.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkWriteReadShouldSucceed-4   	5000000	            313  ns/op	       0 B/op	       0 allocs/op
 ```
 
 ## Thread safety ##
