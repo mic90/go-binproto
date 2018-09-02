@@ -29,7 +29,7 @@ BenchmarkBinProto_Decode-4          	20000000	        69.2 ns/op	       0 B/op	 
 BenchmarkCobsEncode-4               	100000000	        21.2 ns/op	       0 B/op	       0 allocs/op
 BenchmarkCobsDecode-4               	100000000	        17.3 ns/op	       0 B/op	       0 allocs/op
 BenchmarkFletcher16-4               	100000000	        21.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkWriteReadShouldSucceed-4   	5000000	            313  ns/op	       0 B/op	       0 allocs/op
+BenchmarkWriteReadShouldSucceed-4   	5000000	                313  ns/op	       0 B/op	       0 allocs/op
 ```
 
 ## Thread safety ##
