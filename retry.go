@@ -3,9 +3,10 @@ package binproto
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"time"
+
+	"github.com/desertbit/timer"
 )
 
 // ProtocolReadWriter is a helper class to ease i/o operations with encoded data
@@ -17,7 +18,7 @@ type ProtocolReadWriter struct {
 	retryDelay  time.Duration
 	readDelay   time.Duration
 	readTimeout time.Duration
-	timeout     *time.Timer
+	timeout     *timer.Timer
 
 	readBuffer    bytes.Buffer
 	messageBuffer bytes.Buffer
@@ -36,7 +37,7 @@ var (
 
 func NewProtocolReadWriter(retryCount int, retryDelay, readDelay, readTimeout time.Duration) *ProtocolReadWriter {
 	return &ProtocolReadWriter{NewCachedProtocolParser(), retryCount, retryDelay, readDelay,
-		readTimeout, time.NewTimer(0), bytes.Buffer{}, bytes.Buffer{}}
+		readTimeout, timer.NewTimer(0), bytes.Buffer{}, bytes.Buffer{}}
 }
 
 func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte) ([]byte, error) {
@@ -49,7 +50,7 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 	p.readBuffer.Reset()
 
 	err := Retry(p.retryCount, p.retryDelay, func() error {
-		p.resetTimer()
+		p.timeout.Reset(p.readTimeout)
 
 		written, err := readWriter.Write(src)
 		if err != nil {
@@ -118,17 +119,6 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 	return p.messageBuffer.Bytes(), nil
 }
 
-func (p *ProtocolReadWriter) resetTimer() {
-	if !p.timeout.Stop() {
-		select {
-		default:
-		case <-p.timeout.C:
-			break
-		}
-	}
-	p.timeout.Reset(p.readTimeout)
-}
-
 // Retry will try to run callback function
 // If function fails with any error, execution will be retried after given sleep time
 // If all tries will fail, the last error returned from callback will be returned
@@ -139,7 +129,6 @@ func Retry(attempts int, sleep time.Duration, callback func() error) error {
 		if lastErr == nil {
 			return nil
 		}
-		fmt.Println(lastErr)
 		if i >= (attempts - 1) {
 			break
 		}
