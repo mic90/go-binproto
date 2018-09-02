@@ -226,7 +226,7 @@ func TestWriteReadShouldSucceedAndDropMessageAfterFirstZeroSign(t *testing.T) {
 		3,
 		0,
 		0,
-		50*time.Millisecond)
+		10*time.Second)
 
 	// WHEN
 	response, err := readWriter.RetryWriteRead(readWriterMock, encodedMsg)
