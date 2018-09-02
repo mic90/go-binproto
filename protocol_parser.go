@@ -90,7 +90,7 @@ func (proto *ProtocolParser) Decode(src []byte) ([]byte, error) {
 
 // Copy will make a copy of the last encode/decode operation
 // ! This function will allocate a new buffer for each call, so use it wisely
-func (proto ProtocolParser) Copy() []byte {
+func (proto *ProtocolParser) Copy() []byte {
 	newArray := make([]byte, proto.lastPos)
 	copy(newArray, proto.arr[:proto.lastPos])
 	return newArray
