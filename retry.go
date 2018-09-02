@@ -3,6 +3,7 @@ package binproto
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 )
@@ -45,10 +46,10 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 	}
 
 	p.messageBuffer.Reset()
+	p.readBuffer.Reset()
 
 	err := Retry(p.retryCount, p.retryDelay, func() error {
 		p.resetTimer()
-		p.readBuffer.Reset()
 
 		written, err := readWriter.Write(src)
 		if err != nil {
@@ -72,10 +73,11 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 				// no data in input stream -> stop reader loop
 				if readLen == 0 {
 					stopRead = true
+					break
 				}
 				// data contains 0 sign, which means we get whole message -> stop reader loop
 				lastReadBytes += readLen
-				for i, value := range p.readBuffer.Bytes() {
+				for i, value := range p.readBuffer.Bytes()[:lastReadBytes] {
 					if value == 0 {
 						zeroIndex = i
 						stopRead = true
@@ -90,7 +92,7 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 		}
 
 		// timer was fired, we might not receive data at all or do not receive the ending 0 sign
-		if timeout {
+		if timeout == true {
 			return ErrTimeout
 		}
 		// no data was read from input -> repeat write/read cycle
@@ -116,8 +118,15 @@ func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte
 	return p.messageBuffer.Bytes(), nil
 }
 
-func (p *ProtocolReadWriter) resetTimer() bool {
-	return p.timeout.Reset(p.readTimeout)
+func (p *ProtocolReadWriter) resetTimer() {
+	if !p.timeout.Stop() {
+		select {
+		default:
+		case <-p.timeout.C:
+			break
+		}
+	}
+	p.timeout.Reset(p.readTimeout)
 }
 
 // Retry will try to run callback function
@@ -130,6 +139,7 @@ func Retry(attempts int, sleep time.Duration, callback func() error) error {
 		if lastErr == nil {
 			return nil
 		}
+		fmt.Println(lastErr)
 		if i >= (attempts - 1) {
 			break
 		}
