@@ -8,7 +8,7 @@ import (
 func TestCacheEncodeDecodePositive(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	cache := NewCache()
+	cache := NewCachedProtocolParser()
 	//WHEN
 	encoded, _ := cache.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -25,7 +25,7 @@ func TestCacheEncodeDecodePositive(t *testing.T) {
 
 func BenchmarkCache_Encode(b *testing.B) {
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	cache := NewCache()
+	cache := NewCachedProtocolParser()
 	cache.Encode(src)
 
 	for i := 0; i < b.N; i++ {
@@ -38,7 +38,7 @@ func BenchmarkCache_Encode(b *testing.B) {
 
 func BenchmarkCache_Decode(b *testing.B) {
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	cache := NewCache()
+	cache := NewCachedProtocolParser()
 	cache.Encode(src)
 	encoded := cache.Copy()
 

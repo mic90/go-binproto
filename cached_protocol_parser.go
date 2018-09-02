@@ -2,24 +2,24 @@ package binproto
 
 import "unsafe"
 
-// Cache is a wrapper around binproto which adds simple memory cache
+// CachedProtocolParser is a wrapper around binproto which adds simple memory cache
 // Each message will be stored in cache on first encode or decode
 // If given message was parsed previously, its cached results will be returned immediately
-type Cache struct {
-	protocol *BinProto
+type CachedProtocolParser struct {
+	protocol *ProtocolParser
 	cache    map[string][]byte
 }
 
-// NewCache returns new cached protocol object
-func NewCache() *Cache {
+// NewCachedProtocolParser returns new cached protocol object
+func NewCachedProtocolParser() *CachedProtocolParser {
 	cache := make(map[string][]byte)
-	return &Cache{protocol: NewBinProto(), cache: cache}
+	return &CachedProtocolParser{protocol: NewProtocolParser(), cache: cache}
 }
 
 // Encode encodes given source slice with COBS encoding and adds checksum
 // Encoded data will be stored in memory.
 // If given source have been encoded previously its encoded version will be obtained from memory
-func (c *Cache) Encode(src []byte) ([]byte, error) {
+func (c *CachedProtocolParser) Encode(src []byte) ([]byte, error) {
 	srcHash := *(*string)(unsafe.Pointer(&src))
 	if encoded, ok := c.cache[srcHash]; ok {
 		return encoded, nil
@@ -36,7 +36,7 @@ func (c *Cache) Encode(src []byte) ([]byte, error) {
 // Decode decodes given source slice, which was previously encoded with COBS encoding
 // Decoded data will be stored in memory.
 // If given source have been decoded previously its decoded version will be obtained from memory
-func (c *Cache) Decode(src []byte) ([]byte, error) {
+func (c *CachedProtocolParser) Decode(src []byte) ([]byte, error) {
 	srcHash := *(*string)(unsafe.Pointer(&src))
 	if decoded, ok := c.cache[srcHash]; ok {
 		return decoded, nil
@@ -52,6 +52,6 @@ func (c *Cache) Decode(src []byte) ([]byte, error) {
 
 // Copy will make a copy of the last encode/decode operation
 // ! This function will allocate a new buffer for each call, so use it wisely
-func (c *Cache) Copy() []byte {
+func (c *CachedProtocolParser) Copy() []byte {
 	return c.protocol.Copy()
 }

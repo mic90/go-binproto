@@ -1,12 +1,13 @@
 package binproto
 
 import (
+	"errors"
+	"io"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/mock"
-	"io"
+
 	"github.com/stretchr/testify/assert"
-	"errors"
+	"github.com/stretchr/testify/mock"
 )
 
 type ReadWriterMock struct {
@@ -54,7 +55,7 @@ func TestRetryReturnsError(t *testing.T) {
 func TestWriteReadShouldSucceed(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, byte(0))
@@ -88,7 +89,7 @@ func TestWriteReadShouldSucceed(t *testing.T) {
 func TestWriteReadShouldFailIfSourceIsNotZeroEnded(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 
@@ -113,7 +114,7 @@ func TestWriteReadShouldFailIfSourceIsNotZeroEnded(t *testing.T) {
 func TestWriteReadShouldFailIfWriteFailsWithError(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, 0)
@@ -143,13 +144,13 @@ func TestWriteReadShouldFailIfWriteFailsWithError(t *testing.T) {
 func TestWriteReadShouldFailIfNumberOfWrittenBytesIsDifferentThanSrcLength(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, byte(0))
 
 	readWriterMock := &ReadWriterMock{}
-	readWriterMock.On("Write", encodedMsg).Return(len(encodedMsg) - 1, nil)
+	readWriterMock.On("Write", encodedMsg).Return(len(encodedMsg)-1, nil)
 
 	expectedRetryCount := 3
 
@@ -171,7 +172,7 @@ func TestWriteReadShouldFailIfNumberOfWrittenBytesIsDifferentThanSrcLength(t *te
 func TestWriteReadShouldTimeoutIfNoEndingZeroWasReadFromStream(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, byte(0))
@@ -204,7 +205,7 @@ func TestWriteReadShouldTimeoutIfNoEndingZeroWasReadFromStream(t *testing.T) {
 func TestWriteReadShouldSucceedAndDropMessageAfterFirstZeroSign(t *testing.T) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, byte(0))
@@ -251,7 +252,7 @@ func (rw *ReadWriterBenchmarkMock) Read(src []byte) (int, error) {
 func BenchmarkWriteReadShouldSucceed(b *testing.B) {
 	// GIVEN
 	message := []byte("hello")
-	encoder := NewBinProto()
+	encoder := NewProtocolParser()
 	encoder.Encode(message)
 	encodedMsg := encoder.Copy()
 	encodedMsg = append(encodedMsg, byte(0))

@@ -10,7 +10,7 @@ import (
 // ProtocolReadWriter is a helper class to ease i/o operations with encoded data
 // It contains internal protocol decoder which will decode incoming messages
 type ProtocolReadWriter struct {
-	decoder *Cache
+	decoder *CachedProtocolParser
 
 	retryCount  int
 	retryDelay  time.Duration
@@ -34,8 +34,8 @@ var (
 )
 
 func NewProtocolReadWriter(retryCount int, retryDelay, readDelay, readTimeout time.Duration) *ProtocolReadWriter {
-	return &ProtocolReadWriter{NewCache(), retryCount, retryDelay, readDelay,
-	readTimeout, time.NewTimer(0), bytes.Buffer{}, bytes.Buffer{}}
+	return &ProtocolReadWriter{NewCachedProtocolParser(), retryCount, retryDelay, readDelay,
+		readTimeout, time.NewTimer(0), bytes.Buffer{}, bytes.Buffer{}}
 }
 
 func (p *ProtocolReadWriter) RetryWriteRead(readWriter io.ReadWriter, src []byte) ([]byte, error) {

@@ -23,8 +23,8 @@ type EncodeDecoder interface {
 	Decoder
 }
 
-// BinProto implements COBS encoder/decoder with crc checksum
-type BinProto struct {
+// ProtocolParser implements COBS encoder/decoder with crc checksum
+type ProtocolParser struct {
 	// buffer will contain result of encode/decode
 	buffer bytes.Buffer
 	// crcBuffer is temporary buffer which holds concatenated src slice and checksum
@@ -34,16 +34,16 @@ type BinProto struct {
 	lastPos   int
 }
 
-// NewBinProto returns new BinProto object
-func NewBinProto() (binProto *BinProto) {
-	return &BinProto{bytes.Buffer{}, bytes.Buffer{}, []byte{}, []byte{}, 0}
+// NewProtocolParser returns new BinProto object
+func NewProtocolParser() (binProto *ProtocolParser) {
+	return &ProtocolParser{bytes.Buffer{}, bytes.Buffer{}, []byte{}, []byte{}, 0}
 }
 
 // Encode encodes given source slice with COBS encoding
 // Before data is encoded, crc checksum is calculated over it and joined with source data
 // Encoded data is stored in the internal buffer and pointer for it is returned
 // If one wants to store the data for later use, Copy function must be used
-func (proto *BinProto) Encode(src []byte) ([]byte, error) {
+func (proto *ProtocolParser) Encode(src []byte) ([]byte, error) {
 	srcWithChecksumLen := len(src) + crcLen
 	requiredBufferLen := cobsGetEncodedBufferSize(srcWithChecksumLen)
 	if len(proto.arr) < requiredBufferLen {
@@ -65,7 +65,7 @@ func (proto *BinProto) Encode(src []byte) ([]byte, error) {
 // It is assumed that the source slice was encoded with COBS encoding
 // It is also assumed that after encoding removal, raw data consist of data + crc check sum
 // If checksum read after decoding is not correct, error will be returned
-func (proto *BinProto) Decode(src []byte) ([]byte, error) {
+func (proto *ProtocolParser) Decode(src []byte) ([]byte, error) {
 	sourceLength := len(src)
 	if len(proto.arr) < sourceLength {
 		proto.arr = make([]byte, sourceLength)
@@ -90,9 +90,8 @@ func (proto *BinProto) Decode(src []byte) ([]byte, error) {
 
 // Copy will make a copy of the last encode/decode operation
 // ! This function will allocate a new buffer for each call, so use it wisely
-func (proto BinProto) Copy() []byte {
+func (proto ProtocolParser) Copy() []byte {
 	newArray := make([]byte, proto.lastPos)
 	copy(newArray, proto.arr[:proto.lastPos])
 	return newArray
 }
-

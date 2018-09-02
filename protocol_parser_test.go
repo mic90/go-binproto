@@ -10,7 +10,7 @@ import (
 func TestEncodeDecodePositive(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -29,7 +29,7 @@ func TestEncodeEmptyWithInput(t *testing.T) {
 	//GIVEN
 	var emptySrc []byte
 	expectedEncoded := []byte{1, 1, 1}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	encoded, err := proto.Encode(emptySrc)
 	//THEN
@@ -44,7 +44,7 @@ func TestEncodeEmptyWithInput(t *testing.T) {
 func TestDecodeWithEmptyInput(t *testing.T) {
 	//GIVEN
 	var emptyEncoded []byte
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	_, err := proto.Decode(emptyEncoded)
 	//THEN
@@ -59,7 +59,7 @@ func TestDecodeWithEmptyInput(t *testing.T) {
 func TestDecodeWithTooShortInput(t *testing.T) {
 	//GIVEN
 	tooShortEncoded := []byte{1, 1}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 
 	//WHEN/THEN
 	_, err := proto.Decode(tooShortEncoded)
@@ -74,7 +74,7 @@ func TestDecodeWithTooShortInput(t *testing.T) {
 func TestDecodeWithMalformedLengthByte(t *testing.T) {
 	//GIVEN
 	encoded := []byte{3, 1}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	_, err := proto.Decode(encoded)
 	//THEN
@@ -91,7 +91,7 @@ func TestProtoPositiveWithBigData(t *testing.T) {
 	dataSize := 10000
 	src := make([]byte, dataSize)
 	rand.Read(src)
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -109,7 +109,7 @@ func TestProtoPositiveWithBigData(t *testing.T) {
 func TestProtoCrcMismatch(t *testing.T) {
 	//GIVEN
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	//WHEN
 	encoded, _ := proto.Encode(src)
 	encodedSave := make([]byte, len(encoded))
@@ -124,7 +124,7 @@ func TestProtoCrcMismatch(t *testing.T) {
 
 func BenchmarkBinProto_Encode(b *testing.B) {
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	proto.Encode(src)
 
 	b.ResetTimer()
@@ -139,7 +139,7 @@ func BenchmarkBinProto_Encode(b *testing.B) {
 
 func BenchmarkBinProto_Decode(b *testing.B) {
 	src := []byte{1, 1, 1, 0, 0, 1, 5, 12, 44}
-	proto := NewBinProto()
+	proto := NewProtocolParser()
 	proto.Encode(src)
 	encoded := proto.Copy()
 
