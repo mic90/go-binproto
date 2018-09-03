@@ -73,6 +73,7 @@ func TestWriteReadShouldSucceed(t *testing.T) {
 	}).Return(len(encodedResp), io.EOF)
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		3,
 		1*time.Millisecond,
 		1*time.Millisecond,
@@ -96,6 +97,7 @@ func TestWriteReadShouldFailIfSourceIsNotZeroEnded(t *testing.T) {
 	readWriterMock := &ReadWriterMock{}
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		3,
 		1*time.Millisecond,
 		1*time.Millisecond,
@@ -127,6 +129,7 @@ func TestWriteReadShouldFailIfWriteFailsWithError(t *testing.T) {
 	expectedRetryCount := 3
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		expectedRetryCount,
 		1*time.Millisecond,
 		1*time.Millisecond,
@@ -155,6 +158,7 @@ func TestWriteReadShouldFailIfNumberOfWrittenBytesIsDifferentThanSrcLength(t *te
 	expectedRetryCount := 3
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		expectedRetryCount,
 		1*time.Millisecond,
 		1*time.Millisecond,
@@ -189,6 +193,7 @@ func TestWriteReadShouldTimeoutIfNoEndingZeroWasReadFromStream(t *testing.T) {
 	expectedRetryCount := 3
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		expectedRetryCount,
 		0,
 		0,
@@ -223,6 +228,7 @@ func TestWriteReadShouldSucceedAndDropMessageAfterFirstZeroSign(t *testing.T) {
 	}).Return(len(encodedResp), io.EOF)
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		3,
 		0,
 		0,
@@ -265,6 +271,7 @@ func BenchmarkWriteReadShouldSucceed(b *testing.B) {
 	readWriterMock := &ReadWriterBenchmarkMock{encodedResp}
 
 	readWriter := NewProtocolReadWriter(
+		NewProtocolParser(),
 		3,
 		0*time.Millisecond,
 		0*time.Millisecond,
